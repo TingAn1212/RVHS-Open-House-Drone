@@ -1,6 +1,6 @@
 import socket
 # Setting
-local_address = ("127.0.0.1",20001)
+local_address = ("127.0.0.1",8890)
 bufferSize  = 1024
 # Create a datagram socket
 UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
