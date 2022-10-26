@@ -1,0 +1,27 @@
+#:kivy 2.1.0
+
+Stop:
+
+<Stop@AnchorLayout>:
+    anchor_x: "left"
+    anchor_y: "top"
+    padding: ("20dp", "20dp", "20dp" ,"20dp")
+    RoundedButton:
+        background_color: (0,0,0,0)
+        background_normal: ''
+        size_hint: None, None
+        size: "60dp","60dp"
+        text: "STOP"
+            
+
+
+<RoundedButton@Button>:
+    canvas.before: 
+        Color: 
+            rgba: self.normal if self.state=="normal" else self.down
+            # rgba: (1, .2, .2, 1)
+        RoundedRectangle:
+            radius: [65]
+            pos: self.pos
+            size : self.size
+
