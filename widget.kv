@@ -1,8 +1,15 @@
 #:kivy 2.1.0
 
-Stop:
+Main:
 
-<Stop@AnchorLayout>:
+<Main>:
+    Stop:
+    FunctionsDropdown:
+        anchor_x: "center"
+        anchor_y: "top"
+        padding: ("20dp", "20dp", "20dp" ,"20dp")
+
+<Stop>:
     anchor_x: "left"
     anchor_y: "top"
     padding: ("20dp", "20dp", "20dp" ,"20dp")
@@ -25,3 +32,21 @@ Stop:
             pos: self.pos
             size : self.size
 
+<dropdown>:
+    orientation: "vertical"
+    Button:
+        text: "Follow Me"
+        size_hint:None, None
+        size: "120dp", "44dp"
+    Button:
+        text: "Swing Control"
+        size_hint:None, None
+        size: "120dp", "44dp"
+    Button:
+        text: "Voice Control"
+        size_hint:None, None
+        size: "120dp", "44dp"
+        # size_hint_y:None
+        # height:44
+        # size_hint:None, None
+        # size : "110dp", "40dp"
