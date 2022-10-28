@@ -1,5 +1,5 @@
 import socket
-target = ("127.0.0.1", 8890)
+target = ("127.0.0.1", 9000)
 bufferSize = 1024
 # Create a UDP socket at client side
 server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)

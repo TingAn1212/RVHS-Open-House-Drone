@@ -1,6 +1,5 @@
 # Import kivy
 from shutil import ExecError
-from turtle import onrelease
 from unittest.mock import MagicMixin
 from kivy.app import App  
 from kivy.uix.widget import Widget
@@ -10,6 +9,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.button import Button
+from kivy.uix.label import Label
 from kivy.metrics import dp
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.dropdown import DropDown
@@ -34,43 +34,52 @@ server.bind(local_address2)
 #Async UDP functions
 def state():
     global states
-    print("Listening")
     while True:
         try:
             data, source = server.recvfrom(1518)
-            states = data
+            states = str(data)
         except Exception:
             print ('\nExit . . .\n')
             break
-def recv():
+def recv(tar):
     count = 0
     while True: 
         try:
             data, server = client.recvfrom(1518)
-            print(data)
-        except Exception:
+            count += 1
+            tar.root.append(str(data))
+        except Exception as e:
             print ('\nExit . . .\n')
             break
 
 # App classes
 class Main(AnchorLayout):
     size_hint=1,1
-    pass
+    def append(self,new):
+        if new == "state":
+            self.ids.console.tem_content += states + "\n"
+        else:
+            self.ids.console.tem_content += new + "\n"
+        self.ids.console.update()
 
 class Stop(AnchorLayout):
     pass
+
+class Console(Label):
+    tem_content = ""
+    content = StringProperty(tem_content)
+    def update(self):
+        self.content = self.tem_content
 
 class RoundedButton(Button):
     down = (0.25, 0.5, 1, 1)
     normal = (1, .2, .2, 1)
     def emergency(self):
-        print("!!!!!!!!!!!")
         client.sendto(str.encode("emergency"), target_address)
 
 class dropdown(DropDown):
     def send(self, cmd):
         try:
-            print(cmd)
             client.sendto(str.encode(cmd), target_address)
             return "Ok"
         except Exception as e:
@@ -89,14 +98,15 @@ class DroneApp(App):
 
 if __name__ == "__main__":
     #Init
+    app = DroneApp()
     client.sendto(str.encode("command"), target_address)
-    recvThread = threading.Thread(target=recv)
+    recvThread = threading.Thread(target=recv,args=[app])
     recvThread.start()
     server.sendto(str.encode("command"), target_address)
     stateThread = threading.Thread(target=state)
     stateThread.start()
 
     # Running and closing server after closing app
-    DroneApp().run()
+    app.run()
     client.close() 
     server.close()

@@ -8,6 +8,23 @@ Main:
         anchor_x: "right"
         anchor_y: "top"
         padding: ("20dp", "20dp", "20dp" ,"20dp")
+    AnchorLayout:
+        anchor_x: "left"
+        anchor_y: "bottom"
+        Console:
+            id: console
+            size_hint: (0.5,0.5)
+            valign: "top"
+            halign: "left"
+            text_size: self.size
+            text: self.content
+            color: (0,0,0,1)
+            canvas.before:
+                Color:
+                    rgba: (255,255,255,1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
 
 <Stop>:
     anchor_x: "left"
@@ -19,7 +36,9 @@ Main:
         size_hint: None, None
         size: "60dp","60dp"
         text: "STOP"
-        on_press: self.emergency()
+        on_press: 
+            self.emergency()
+            app.root.append("STOP")
 
 <RoundedButton@Button>:
     canvas.before: 
@@ -53,9 +72,19 @@ Main:
         text: "Take Off"
         size_hint:None, None
         size: "120dp", "44dp"
-        on_press: self.parent.parent.send("takeoff")
+        on_press: 
+            root.send("takeoff")
+            app.root.append("takeoff")
     Button:
         text: "Land"
         size_hint:None, None
         size: "120dp", "44dp"
-        on_press: self.parent.parent.send("land")
+        on_press: 
+            root.send("land")
+            app.root.append("land")
+    Button:
+        text: "State"
+        size_hint:None, None
+        size: "120dp", "44dp"
+        on_press: 
+            app.root.append("state")
