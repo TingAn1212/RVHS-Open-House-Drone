@@ -63,6 +63,9 @@ class Stop(AnchorLayout):
 class RoundedButton(Button):
     down = (0.25, 0.5, 1, 1)
     normal = (1, .2, .2, 1)
+    def emergency(self):
+        print("!!!!!!!!!!!")
+        client.sendto(str.encode("emergency"), target_address)
 
 class dropdown(DropDown):
     def send(self, cmd):
@@ -93,6 +96,7 @@ if __name__ == "__main__":
     stateThread = threading.Thread(target=state)
     stateThread.start()
 
+    # Running and closing server after closing app
     DroneApp().run()
     client.close() 
     server.close()
