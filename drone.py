@@ -1,6 +1,24 @@
-#Import 
+# Import kivy
+from shutil import ExecError
+from turtle import onrelease
+from unittest.mock import MagicMixin
+from kivy.app import App  
+from kivy.uix.widget import Widget
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.stacklayout import StackLayout
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.button import Button
+from kivy.metrics import dp
+from kivy.properties import StringProperty, BooleanProperty
+from kivy.uix.dropdown import DropDown
+# from kivy.garden.joystick import Joystick
+
+# Import drone
 import threading 
 import socket
+
 #Global Variables
 states = ""
 local_address1 = ("",9000) 
@@ -10,7 +28,10 @@ client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 client.bind(local_address1)
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(local_address2)
-#Async
+
+#Info processing functions
+
+#Async UDP functions
 def state():
     global states
     print("Listening")
@@ -30,36 +51,48 @@ def recv():
         except Exception:
             print ('\nExit . . .\n')
             break
-print ('\r\n\r\nTello Python3 Demo.\r\n')
-print ('Tello: command takeoff land flip forward back left right \r\n       up down cw ccw speed speed?\r\n')
-print ('end -- quit demo.\r\n')
-#Init
-client.sendto(str.encode("command"), target_address)
-recvThread = threading.Thread(target=recv)
-recvThread.start()
 
-server.sendto(str.encode("command"), target_address)
-stateThread = threading.Thread(target=state)
-stateThread.start()
-#Main
-while (True):
-    try:
-        msg = input("")
-        if not msg:
-            break  
-        if 'end' in msg:
-            print ('...')
-            client.close()
-            server.close()
-            break
-        # Send data
-        if msg == "state" :
-            print(states)
-        else:
-            msg = msg.encode(encoding="utf-8") 
-            sent = client.sendto(msg, target_address)
-    except KeyboardInterrupt:
-        print ('\n . . .\n')
-        client.close() 
-        server.close()
-        break
+# App classes
+class Main(AnchorLayout):
+    size_hint=1,1
+    pass
+
+class Stop(AnchorLayout):
+    pass
+
+class RoundedButton(Button):
+    down = (0.25, 0.5, 1, 1)
+    normal = (1, .2, .2, 1)
+
+class dropdown(DropDown):
+    def send(self, cmd):
+        try:
+            print(cmd)
+            client.sendto(str.encode(cmd), target_address)
+            return "Ok"
+        except Exception as e:
+            return e
+
+class FunctionsDropdown(AnchorLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.dropdown = dropdown()
+        self.mainbutton = Button(text = "Functions", size_hint=(None, None), size=("120dp", "44dp"), pos_hint={"y":0})
+        self.add_widget(self.mainbutton)
+        self.mainbutton.bind(on_release = self.dropdown.open)
+
+class DroneApp(App):
+    pass
+
+if __name__ == "__main__":
+    #Init
+    client.sendto(str.encode("command"), target_address)
+    recvThread = threading.Thread(target=recv)
+    recvThread.start()
+    server.sendto(str.encode("command"), target_address)
+    stateThread = threading.Thread(target=state)
+    stateThread.start()
+
+    DroneApp().run()
+    client.close() 
+    server.close()

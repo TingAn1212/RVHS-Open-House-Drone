@@ -5,7 +5,7 @@ Main:
 <Main>:
     Stop:
     FunctionsDropdown:
-        anchor_x: "center"
+        anchor_x: "right"
         anchor_y: "top"
         padding: ("20dp", "20dp", "20dp" ,"20dp")
 
@@ -19,8 +19,6 @@ Main:
         size_hint: None, None
         size: "60dp","60dp"
         text: "STOP"
-            
-
 
 <RoundedButton@Button>:
     canvas.before: 
@@ -50,3 +48,13 @@ Main:
         # height:44
         # size_hint:None, None
         # size : "110dp", "40dp"
+    Button:
+        text: "Take Off"
+        size_hint:None, None
+        size: "120dp", "44dp"
+        on_press: self.parent.parent.send("takeoff")
+    Button:
+        text: "Land"
+        size_hint:None, None
+        size: "120dp", "44dp"
+        on_press: self.parent.parent.send("land")
