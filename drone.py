@@ -13,7 +13,7 @@ from kivy.uix.label import Label
 from kivy.metrics import dp
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.dropdown import DropDown
-# from kivy.garden.joystick import Joystick
+from kivy.garden.joystick import Joystick
 
 # Import drone
 import threading 
@@ -92,6 +92,43 @@ class FunctionsDropdown(AnchorLayout):
         self.mainbutton = Button(text = "Functions", size_hint=(None, None), size=("120dp", "44dp"), pos_hint={"y":0})
         self.add_widget(self.mainbutton)
         self.mainbutton.bind(on_release = self.dropdown.open)
+
+class Wasd(FloatLayout): #idk what to call it 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.padding = 20
+        js = Joystick(pad_size = 0.4, outer_size = 0.4, inner_size=0.4)
+        self.add_widget(js)
+        self.label = Label()
+        self.add_widget(self.label)
+        js.bind(pad = self.update_coordinates)
+    def update_coordinates(self, joystick, pad):
+        x = str(pad[0])[0:5]
+        y = str(pad[1])[0:5]
+        radians = str(joystick.radians)[0:5]
+        magnitude = str(joystick.magnitude)[0:5]
+        angle = str(joystick.angle)[0:5]
+        text = "x: {}\ny: {}\nradians: {}\nmagnitude: {}\nangle: {}"
+        self.label.text = text.format(x, y, radians, magnitude, angle) 
+
+class Updown(FloatLayout): #idk what to call it x3
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.padding = 20
+        ud = Joystick(pad_size = 0.4, outer_size = 0.4, inner_size=0.4)
+        self.add_widget(ud)
+        self.label = Label()
+        self.add_widget(self.label)
+        ud.bind(pad = self.update_coordinates)
+    def update_coordinates(self, joystick, pad):
+        x = str(pad[0])[0:5]
+        y = str(pad[1])[0:5]
+        radians = str(joystick.radians)[0:5]
+        magnitude = str(joystick.magnitude)[0:5]
+        angle = str(joystick.angle)[0:5]
+        text = "x: {}\ny: {}\nradians: {}\nmagnitude: {}\nangle: {}"
+        self.label.text = text.format(x, y, radians, magnitude, angle)
+
 
 class DroneApp(App):
     pass

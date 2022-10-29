@@ -2,29 +2,40 @@
 
 Main:
 
-<Main>:
+<Main>: 
     Stop:
+    Wasd:
+        size_hint: None, None
+        size: "160dp", "160dp"
+        pos_hint: None, None
+        pos: "20dp" , "20dp"
+        padding: ("20dp", "20dp", "20dp" ,"20dp")
+    Updown:
+        size_hint: None, None
+        pos_hint: None, None
+        pos: "800dp" , "20dp"
+        padding: ("20dp", "20dp", "20dp" ,"20dp")
     FunctionsDropdown:
         anchor_x: "right"
         anchor_y: "top"
         padding: ("20dp", "20dp", "20dp" ,"20dp")
-    AnchorLayout:
-        anchor_x: "left"
-        anchor_y: "bottom"
-        Console:
-            id: console
-            size_hint: (0.5,0.5)
-            valign: "top"
-            halign: "left"
-            text_size: self.size
-            text: self.content
-            color: (0,0,0,1)
-            canvas.before:
-                Color:
-                    rgba: (255,255,255,1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
+    # AnchorLayout:
+    #     anchor_x: "left"
+    #     anchor_y: "bottom"
+    #     Console:
+    #         id: console
+    #         size_hint: (0.5,0.5)
+    #         valign: "top"
+    #         halign: "left"
+    #         text_size: self.size
+    #         text: self.content
+    #         color: (0,0,0,1)
+    #         canvas.before:
+    #             Color:
+    #                 rgba: (255,255,255,1)
+    #             Rectangle:
+    #                 size: self.size
+    #                 pos: self.pos
 
 <Stop>:
     anchor_x: "left"
