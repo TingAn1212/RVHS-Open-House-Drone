@@ -97,7 +97,7 @@ class Wasd(FloatLayout): #idk what to call it
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.padding = 20
-        js = Joystick(pad_size = 0.4, outer_size = 0.4, inner_size=0.4)
+        js = Joystick(pad_size = 0.4, outer_size = 0.4, inner_size=0.4, size_hint=(0.4,0.4))
         self.add_widget(js)
         self.label = Label()
         self.add_widget(self.label)
@@ -115,7 +115,7 @@ class Updown(FloatLayout): #idk what to call it x3
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.padding = 20
-        ud = Joystick(pad_size = 0.4, outer_size = 0.4, inner_size=0.4)
+        ud = Joystick(pad_size = 0.4, outer_size = 0.4, inner_size=0.4, size_hint=(0.4,0.4), pos_hint={"right":1})
         self.add_widget(ud)
         self.label = Label()
         self.add_widget(self.label)
