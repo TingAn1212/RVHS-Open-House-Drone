@@ -1,0 +1,13 @@
+bash:
+cd "/mnt/c/Users/student/Documents/GitHub/RVHS-Open-House-Drone"
+cmd:
+cd "C:\platform-tools\"
+.\adb kill-server
+.\adb -a -P 5037 nodaemon server
+bash:
+export ADB_SERVER_SOCKET=tcp:(ip):5037 # export ADB_SERVER_SOCKET=tcp:192.168.1.15:5037
+adb devices
+buildozer -v android deploy run logcat | grep python
+
+build:
+buildozer -v android debug

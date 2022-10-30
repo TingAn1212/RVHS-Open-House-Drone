@@ -1,6 +1,4 @@
 # Import kivy
-from shutil import ExecError
-from unittest.mock import MagicMixin
 from kivy.app import App  
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
@@ -13,8 +11,11 @@ from kivy.uix.label import Label
 from kivy.metrics import dp
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.dropdown import DropDown
-from kivy.garden.joystick import Joystick
-
+from garden.joystick.joystick import Joystick
+from kivy import platform
+if platform == "android":
+    from android.permissions import Permission, request_permissions
+    request_permissions([Permission.INTERNET,Permission.ACCESS_NETWORK_STATE])
 # Import drone
 import threading 
 import socket
@@ -122,12 +123,12 @@ class Updown(FloatLayout): #idk what to call it x3
         angle = str(joystick.angle)[0:5]
 
 
-class DroneApp(App):
+class MainApp(App):
     pass
 
 if __name__ == "__main__":
     #Init
-    app = DroneApp()
+    app = MainApp()
     client.sendto(str.encode("command"), target_address)
     recvThread = threading.Thread(target=recv,args=[app])
     recvThread.start()
