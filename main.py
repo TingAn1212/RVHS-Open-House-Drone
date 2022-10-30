@@ -8,6 +8,7 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.uix.scrollview import ScrollView
 from kivy.metrics import dp
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.dropdown import DropDown
@@ -19,9 +20,12 @@ if platform == "android":
 # Import drone
 import threading 
 import socket
+from time import sleep
 
 #Global Variables
 states = ""
+flag = {"stop":True}
+coord = [[0,0],[0,0]]
 local_address1 = ("",9000) 
 local_address2 = ("0.0.0.0",8890) 
 target_address = ('192.168.10.1', 8889)
@@ -31,7 +35,12 @@ server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(local_address2)
 
 #Info processing functions
-
+def total(inp):
+    res = 0
+    for row in inp:
+        for item in row:
+            res += float(item)
+    return res
 #Async UDP functions
 def state():
     global states
@@ -52,25 +61,46 @@ def recv(tar):
         except Exception as e:
             print ('\nExit . . .\n')
             break
-
+def move():
+    while True:
+        sleep(0.1)
+        if (coord == "break"):
+            break
+        else:
+            client.sendto(str.encode("rc {} {} {} {}".format(float(coord[0][0])*100,float(coord[0][1])*100,float(coord[1][1])*100,float(coord[1][0])*100)), target_address)
 # App classes
 class Main(AnchorLayout):
     size_hint=1,1
     def append(self,new):
         if new == "state":
-            self.ids.console.tem_content += states + "\n"
+            self.ids.console.tem_content.append(states + "\n") 
         else:
-            self.ids.console.tem_content += new + "\n"
+            self.ids.console.tem_content.append(new + "\n") 
         self.ids.console.update()
 
 class Stop(AnchorLayout):
     pass
 
 class Console(Label):
-    tem_content = ""
-    content = StringProperty(tem_content)
+    tem_content = []
+    content = StringProperty("")
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.content = self.convert(self.tem_content)
+    def convert(self,inp):
+        res = ""
+        if len(self.tem_content) > 10:
+            for row in inp[-10:]:
+                res += row
+        else:
+            for row in inp:
+                res += row
+        if len(self.tem_content) > 15:
+            inp.pop(0)
+        return res
+
     def update(self):
-        self.content = self.tem_content
+        self.content = self.convert(self.tem_content)
 
 class RoundedButton(Button):
     down = (0.25, 0.5, 1, 1)
@@ -107,6 +137,7 @@ class Wasd(FloatLayout): #idk what to call it
         radians = str(joystick.radians)[0:5]
         magnitude = str(joystick.magnitude)[0:5]
         angle = str(joystick.angle)[0:5]
+        coord[0] = [x,y]
 
 class Updown(FloatLayout): #idk what to call it x3
     def __init__(self, **kwargs):
@@ -121,6 +152,7 @@ class Updown(FloatLayout): #idk what to call it x3
         radians = str(joystick.radians)[0:5]
         magnitude = str(joystick.magnitude)[0:5]
         angle = str(joystick.angle)[0:5]
+        coord[1] = [x,y]
 
 
 class MainApp(App):
@@ -135,8 +167,12 @@ if __name__ == "__main__":
     server.sendto(str.encode("command"), target_address)
     stateThread = threading.Thread(target=state)
     stateThread.start()
+    moveThread = threading.Thread(target=move)
+    moveThread.start()
 
     # Running and closing server after closing app
     app.run()
     client.close() 
     server.close()
+    coord = "break"
+    print("App closed successfully")
