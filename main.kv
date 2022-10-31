@@ -73,12 +73,10 @@ Main:
         size: "120dp", "44dp"
     Button:
         text: "Voice Control"
+        id: start_button
         size_hint:None, None
         size: "120dp", "44dp"
-        # size_hint_y:None
-        # height:44
-        # size_hint:None, None
-        # size : "110dp", "40dp"
+        on_press: root.listen()
     Button:
         text: "Take Off"
         size_hint:None, None

@@ -18,10 +18,11 @@ if platform == "android":
     from android.permissions import Permission, request_permissions
     request_permissions([Permission.INTERNET,Permission.ACCESS_NETWORK_STATE])
 # Import drone
+from plyer import stt
 import threading 
 import socket
 from time import sleep
-
+from kivy.clock import Clock
 #Global Variables
 states = ""
 flag = {"stop":True}
@@ -116,6 +117,36 @@ class dropdown(DropDown):
         except Exception as e:
             return e
             
+    def listen(self):
+        if stt.listening:
+            self.stop_listening()
+            return 
+        start_button = self.ids.start_button
+        start_button.text = 'Stop'
+
+        stt.start()
+
+        Clock.schedule_interval(self.check_state, 1 / 5)
+
+    def stop_listening(self):
+        start_button = self.ids.start_button
+        start_button.text = 'Start Listening'
+
+        stt.stop()
+        self.update()
+
+        Clock.unschedule(self.check_state)
+    
+    def check_state(self, dt):
+        # if the recognizer service stops, change UI
+        if not stt.listening:
+            self.stop_listening()
+
+    def update(self):
+        print(stt.partial_results)
+        print(stt.results)
+
+
 class FunctionsDropdown(AnchorLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -124,7 +155,7 @@ class FunctionsDropdown(AnchorLayout):
         self.add_widget(self.mainbutton)
         self.mainbutton.bind(on_release = self.dropdown.open)
 
-class Wasd(FloatLayout): #idk what to call it 
+class Wasd(FloatLayout): 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.padding = 20
@@ -139,7 +170,7 @@ class Wasd(FloatLayout): #idk what to call it
         angle = str(joystick.angle)[0:5]
         coord[0] = [x,y]
 
-class Updown(FloatLayout): #idk what to call it x3
+class Updown(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.padding = 20
