@@ -14,18 +14,20 @@ from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.dropdown import DropDown
 from garden.joystick.joystick import Joystick
 from kivy import platform
-if platform == "android":
-    from android.permissions import Permission, request_permissions
-    request_permissions([Permission.INTERNET,Permission.ACCESS_NETWORK_STATE,Permission.RECORD_AUDIO])
 # Import drone
-from plyer import stt, audio
+from plyer import stt, spatialorientation
+from math import pi
 import threading 
 import socket
 from time import sleep
 from kivy.clock import Clock
+if platform == "android":
+    spatialorientation.enable_listener()
+    from android.permissions import Permission, request_permissions
+    request_permissions([Permission.INTERNET,Permission.ACCESS_NETWORK_STATE,Permission.RECORD_AUDIO])
 #Global Variables
 states = ""
-flag = {"stop":True}
+flag = {"stop":True,"lock":False}
 coord = [[0,0],[0,0]]
 local_address1 = ("",9000) 
 local_address2 = ("0.0.0.0",8890) 
@@ -49,13 +51,25 @@ def include(source,target):
             return True
     return False
 def read(target):
-    target = target.splt("'")[1]
+    target = target.split("'")[1]
     result = {"dict":True}
     tem = target.split(";")
     for item in tem:
-        tempo = item.split(":")
-        result[tempo[0]] = tempo[1]
+        if ":" in item:
+            tempo = item.split(":")
+            result[tempo[0]] = tempo[1]
     return result
+def degree(src):
+    res = []
+    for item in src:
+        tem = float(item)/pi*180
+        if tem < 0:
+            #tem = 180 + (-1*tem)
+            pass
+        res.append(round(tem,2))
+    return res
+def close(i1,i2,range):
+    return abs(i1-i2) < range
 #Async UDP functions
 def state():
     global states
@@ -63,7 +77,8 @@ def state():
         try:
             data, source = server.recvfrom(1518)
             states = str(data)
-        except Exception:
+        except Exception as e:
+            #print(e)
             print ('\nExit . . .\n')
             break
 def recv(tar):
@@ -74,6 +89,7 @@ def recv(tar):
             count += 1
             tar.root.append(str(data))
         except Exception as e:
+            #print(e)
             print ('\nExit . . .\n')
             break
 def move():
@@ -82,7 +98,8 @@ def move():
         if (coord == "break"):
             break
         else:
-            client.sendto(str.encode("rc {} {} {} {}".format(float(coord[0][0])*100,float(coord[0][1])*100,float(coord[1][1])*100,float(coord[1][0])*100)), target_address)
+            if not flag["lock"]:
+                client.sendto(str.encode("rc {} {} {} {}".format(float(coord[0][0])*100,float(coord[0][1])*100,float(coord[1][1])*100,float(coord[1][0])*100)), target_address)
 # App classes
 class Main(AnchorLayout):
     size_hint=1,1
@@ -104,13 +121,13 @@ class Console(Label):
         self.content = self.convert(self.tem_content)
     def convert(self,inp):
         res = ""
-        if len(self.tem_content) > 7:
-            for row in inp[-7:]:
+        if len(self.tem_content) > 5:
+            for row in inp[-5:]:
                 res += row
         else:
             for row in inp:
                 res += row
-        if len(self.tem_content) > 15:
+        if len(self.tem_content) > 7:
             inp.pop(0)
         return res
 
@@ -124,6 +141,31 @@ class RoundedButton(Button):
         client.sendto(str.encode("emergency"), target_address)
 
 class dropdown(DropDown):
+    def sync(self):
+        yaw = 0
+        try:
+            yaw = int(read(states)["yaw"])
+        except:
+            pass
+        ori = degree(spatialorientation.orientation)
+        ori[0] -= 90
+        if not close(yaw,ori[0],10) and platform == "android":
+            flag["lock"] = True
+            ind = 0
+            respond = "Error"
+            self.send("rc 0 0 0 100")
+            while (ind < 60):
+                sleep(0.1)
+                ind += 1
+                yaw = int(read(states)["yaw"])
+                if close(yaw,ori[0],20):
+                    respond = "ok"
+                    self.send("rc 0 0 0 0")
+                    break
+            flag["lock"] = False
+            app.root.append(respond)
+        app.root.append(str(ori))
+        
     def send(self, cmd):
         try:
             client.sendto(str.encode(cmd), target_address)

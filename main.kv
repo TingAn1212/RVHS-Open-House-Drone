@@ -25,7 +25,7 @@ Main:
         anchor_y: "bottom"
         Console:
             id: console
-            size_hint: (0.5,0.5)
+            size_hint: (1,0.5)
             valign: "top"
             halign: "left"
             text_size: self.size
@@ -64,13 +64,10 @@ Main:
 <dropdown>:
     orientation: "vertical"
     Button:
-        text: "Follow Me"
+        text: "Sync"
         size_hint:None, None
         size: "120dp", "44dp"
-    Button:
-        text: "Swing Control"
-        size_hint:None, None
-        size: "120dp", "44dp"
+        on_press: root.sync()
     Button:
         text: "Voice Control"
         id: start_button
