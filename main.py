@@ -16,9 +16,9 @@ from garden.joystick.joystick import Joystick
 from kivy import platform
 if platform == "android":
     from android.permissions import Permission, request_permissions
-    request_permissions([Permission.INTERNET,Permission.ACCESS_NETWORK_STATE])
+    request_permissions([Permission.INTERNET,Permission.ACCESS_NETWORK_STATE,Permission.RECORD_AUDIO])
 # Import drone
-from plyer import stt
+from plyer import stt, audio
 import threading 
 import socket
 from time import sleep
@@ -34,6 +34,7 @@ client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 client.bind(local_address1)
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(local_address2)
+stt.language = "en-US"
 
 #Info processing functions
 def total(inp):
@@ -42,6 +43,19 @@ def total(inp):
         for item in row:
             res += float(item)
     return res
+def include(source,target):
+    for item in target:
+        if item in source or item.lower() in source:
+            return True
+    return False
+def read(target):
+    target = target.splt("'")[1]
+    result = {"dict":True}
+    tem = target.split(";")
+    for item in tem:
+        tempo = item.split(":")
+        result[tempo[0]] = tempo[1]
+    return result
 #Async UDP functions
 def state():
     global states
@@ -125,6 +139,7 @@ class dropdown(DropDown):
         start_button.text = 'Stop'
 
         stt.start()
+        #audio.start()
 
         Clock.schedule_interval(self.check_state, 1 / 5)
 
@@ -133,18 +148,33 @@ class dropdown(DropDown):
         start_button.text = 'Start Listening'
 
         stt.stop()
+        #audio.stop()
         self.update()
 
         Clock.unschedule(self.check_state)
     
     def check_state(self, dt):
-        # if the recognizer service stops, change UI
+        print(stt.listening)
         if not stt.listening:
+            print(stt.errors)
             self.stop_listening()
 
     def update(self):
-        print(stt.partial_results)
         print(stt.results)
+        print(stt.partial_results)
+        #audio.play()
+        result = stt.results
+        if (include(result,["TAKE OFF","TAKE","TAKE ALL","TAKEOFF"])):
+            app.root.append("takeoff")
+            self.send("takeoff")
+        elif (include(result,["LAND","LEND","LEARN","LEAN","LET"])):
+            app.root.append("land")
+            self.send("land")
+        elif (include(result,["SLEEP","SHEEP","FLIP","FREE","ZIP"])):
+            app.root.append("flip")
+            self.send("flip b")
+        else:
+            app.root.append(str(result))
 
 
 class FunctionsDropdown(AnchorLayout):
