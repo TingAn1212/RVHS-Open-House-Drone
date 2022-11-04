@@ -104,8 +104,8 @@ class Console(Label):
         self.content = self.convert(self.tem_content)
     def convert(self,inp):
         res = ""
-        if len(self.tem_content) > 10:
-            for row in inp[-10:]:
+        if len(self.tem_content) > 7:
+            for row in inp[-7:]:
                 res += row
         else:
             for row in inp:
