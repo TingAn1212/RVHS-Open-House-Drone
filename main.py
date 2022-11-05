@@ -148,7 +148,9 @@ class dropdown(DropDown):
         except:
             pass
         ori = degree(spatialorientation.orientation)
-        ori[0] -= 90
+        ori[0] += 90
+        if ori[0] > 180:
+            ori[0] = (ori[0]-180) + -180
         if not close(yaw,ori[0],10) and platform == "android":
             flag["lock"] = True
             ind = 0
@@ -158,7 +160,7 @@ class dropdown(DropDown):
                 sleep(0.1)
                 ind += 1
                 yaw = int(read(states)["yaw"])
-                if close(yaw,ori[0],20):
+                if close(yaw,ori[0],10):
                     respond = "ok"
                     self.send("rc 0 0 0 0")
                     break
