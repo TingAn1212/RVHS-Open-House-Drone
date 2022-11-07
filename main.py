@@ -1,4 +1,5 @@
 # Import kivy
+import time 
 from kivy.app import App  
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
@@ -15,7 +16,7 @@ from kivy.uix.dropdown import DropDown
 from garden.joystick.joystick import Joystick
 from kivy import platform
 # Import drone
-from plyer import stt, spatialorientation
+from plyer import stt, spatialorientation, accelerometer
 from math import pi
 import threading 
 import socket
@@ -141,6 +142,52 @@ class RoundedButton(Button):
         client.sendto(str.encode("emergency"), target_address)
 
 class dropdown(DropDown):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.followme=Button(text="Follow me",size_hint=(None, None), size=("120dp", "44dp"))
+        self.add_widget(self.followme)
+        self.stop = True
+        self.min = 3 #chose a random number
+        self.acc = []
+        self.acceleration = threading.Thread(target=self.enableacc)
+        func = lambda useless: self.acceleration.start()
+        self.followme.bind(on_press = func)
+        func2 = lambda useless: self.disableacc()
+        self.followme.bind(on_release = func2)
+        self.axes = ['x', 'y', 'z']
+
+    def enableacc(self, randomparam):
+        accelerometer.enable()
+        while self.stop: 
+            a = accelerometer.acceleration
+            if max(a) > self.min or abs(min(a)) > self.min:
+                self.acc.append(a)
+            time.sleep(0.5) #or some other time
+
+
+    def disableacc(self):
+        self.stop = False
+        accelerometer.disable()
+        self.direction()
+    
+    def direction(self): #finds out direction of acceleration.
+        maxacc = 0
+        maxidx = 0
+        minacc = 10000
+        minidx=0
+        #find max and min acc across all data points + find index
+        for i,x in enumerate(self.acc):
+            if (max(x)) > maxacc:
+                maxacc= max(x)
+                maxidx = i
+            if (min(x)) < minacc:
+                minacc=min(x)
+                minidx = i      
+        if maxidx < minidx or (maxidx == minidx and maxacc > abs(minacc)):
+            print(f"acceleration is {maxacc} along the {self.axes[self.acc[maxidx].index(maxacc)]} axis")
+        else: 
+            print(f"acceleration is {minacc} along the {self.axes[self.acc[minidx].index(minacc)]} axis")
+
     def sync(self):
         yaw = 0
         try:
