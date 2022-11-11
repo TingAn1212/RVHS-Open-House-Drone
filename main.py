@@ -44,7 +44,7 @@ class Acc:
         for i in range(20):
             self.data["x"].append(0)
             self.data["y"].append(0)
-            self.data["y"].append(0)
+            self.data["z"].append(0)
     def add(self,new):
         self.data["x"].append(new[0])
         self.data["x"].pop(0)
@@ -55,6 +55,7 @@ class Acc:
         dir = "0"
         if self.mid():
             dir = self.direction()
+            print(dir)
         return dir
     def check(self):
         tem = []
@@ -66,8 +67,8 @@ class Acc:
         else:
             return False
     def mid(self):
-        tem = [abs(self.data["x"][10]),abs(self.data["y"][10]),abs(self.data["z"][10])]
-        if min(tem) >= self.mini:
+        tem = [abs(self.data["x"][9]),abs(self.data["y"][9]),abs(self.data["z"][9])]
+        if max(tem) >= self.mini:
             return True
         else:
             return False
@@ -85,8 +86,14 @@ class Acc:
         else:
             nega = "-"
         return nega+dir
+    def reset(self):
+        self.data = {"x":[],"y":[],"z":[]}
+        for i in range(20):
+            self.data["x"].append(0)
+            self.data["y"].append(0)
+            self.data["z"].append(0)
 
-acc = Acc(7)
+acc = Acc(8)
 #Info processing functions
 def total(inp):
     res = 0
@@ -94,9 +101,14 @@ def total(inp):
         for item in row:
             res += float(item)
     return res
+def inside(source,search):
+    for i in source:
+        if i.lower() == search.lower():
+            return True
+    return False
 def include(source,target):
     for item in target:
-        if item in source or item.lower() in source:
+        if inside(source,item):
             return True
     return False
 def read(target):
@@ -160,9 +172,20 @@ def update_acc():
             data = (a[0]-g[0],a[1]-g[1],a[2]-g[2])
             result = acc.add(data)
             if result != "0":
-                if result[0] == "-":
-                    print("-")
-                print(result[-1])
+                app.root.append(result)
+                flag["lock"] == True
+                acc.reset()
+                if result == "+y":
+                    client.sendto(str.encode("rc -100 0 0 0"), target_address)
+                elif result == "-y":
+                    client.sendto(str.encode("rc 100 0 0 0"), target_address)
+                elif result == "+z":
+                    client.sendto(str.encode("rc 0 0 100 0"), target_address)
+                elif result == "-z":
+                    client.sendto(str.encode("rc 0 0 -100 0"), target_address)
+                sleep(2.5)
+                client.sendto(str.encode("rc 0 0 0 0"), target_address)
+                flag["lock"] == False
             
 # App classes
 class Main(AnchorLayout):
@@ -295,6 +318,20 @@ class dropdown(DropDown):
         elif (include(result,["SLEEP","SHEEP","FLIP","FREE","ZIP","SLIP","SIP"])):
             app.root.append("flip")
             self.send("flip b")
+        elif (include(result,["go","goat","goal","goo","bowl"])):
+            app.root.append("forward")
+            flag["lock"] = True
+            self.send("rc 0 100 0 0")
+            sleep(2.5)
+            self.send("rc 0 0 0 0")
+            flag["lock"] = False
+        elif (include(result,["back","bag","beck"])):
+            app.root.append("backward")
+            flag["lock"] = True
+            self.send("rc 0 -100 0 0")
+            sleep(2.5)
+            self.send("rc 0 0 0 0")
+            flag["lock"] = False
         else:
             app.root.append(str(result))
 
