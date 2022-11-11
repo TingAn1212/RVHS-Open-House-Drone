@@ -64,6 +64,12 @@ Main:
 <dropdown>:
     orientation: "vertical"
     Button:
+        text: "Motion Control"
+        id: motion_control
+        size_hint:None, None
+        size: "120dp", "44dp"
+        on_press: root.toggle_acc()
+    Button:
         text: "Sync"
         size_hint:None, None
         size: "120dp", "44dp"

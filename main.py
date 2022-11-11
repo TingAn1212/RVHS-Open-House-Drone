@@ -1,5 +1,4 @@
 # Import kivy
-import time 
 from kivy.app import App  
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
@@ -16,7 +15,7 @@ from kivy.uix.dropdown import DropDown
 from garden.joystick.joystick import Joystick
 from kivy import platform
 # Import drone
-from plyer import stt, spatialorientation, accelerometer
+from plyer import stt, spatialorientation, accelerometer, gravity
 from math import pi
 import threading 
 import socket
@@ -28,7 +27,7 @@ if platform == "android":
     request_permissions([Permission.INTERNET,Permission.ACCESS_NETWORK_STATE,Permission.RECORD_AUDIO])
 #Global Variables
 states = ""
-flag = {"stop":True,"lock":False}
+flag = {"stop":True,"lock":False,"motion":False}
 coord = [[0,0],[0,0]]
 local_address1 = ("",9000) 
 local_address2 = ("0.0.0.0",8890) 
@@ -38,7 +37,56 @@ client.bind(local_address1)
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(local_address2)
 stt.language = "en-US"
+class Acc:
+    def __init__(self,mini):
+        self.mini = mini
+        self.data = {"x":[],"y":[],"z":[]}
+        for i in range(20):
+            self.data["x"].append(0)
+            self.data["y"].append(0)
+            self.data["y"].append(0)
+    def add(self,new):
+        self.data["x"].append(new[0])
+        self.data["x"].pop(0)
+        self.data["y"].append(new[1])
+        self.data["y"].pop(0)
+        self.data["z"].append(new[2])
+        self.data["z"].pop(0)
+        dir = "0"
+        if self.mid():
+            dir = self.direction()
+        return dir
+    def check(self):
+        tem = []
+        for k in self.data.keys():
+            tem.append(abs(min(self.data[k])))
+            tem.append(abs(max(self.data[k])))
+        if min(tem) >= self.mini:
+            return True
+        else:
+            return False
+    def mid(self):
+        tem = [abs(self.data["x"][10]),abs(self.data["y"][10]),abs(self.data["z"][10])]
+        if min(tem) >= self.mini:
+            return True
+        else:
+            return False
+    def direction(self): #finds out direction of acceleration.
+        axis = "xyz"
+        mx = [abs(max(self.data["x"])),abs(min(self.data["x"]))]
+        my = [abs(max(self.data["y"])),abs(min(self.data["y"]))]
+        mz = [abs(max(self.data["z"])),abs(min(self.data["z"]))]
+        tem = [max(mx),max(my),max(mz)]
+        dir = axis[tem.index(max(tem))]
+        axis_data = self.data[dir]
+        nega = axis_data.index(max(axis_data)) < axis_data.index(min(axis_data))
+        if nega:
+            nega = "+"
+        else:
+            nega = "-"
+        return nega+dir
 
+acc = Acc(7)
 #Info processing functions
 def total(inp):
     res = 0
@@ -96,11 +144,26 @@ def recv(tar):
 def move():
     while True:
         sleep(0.1)
-        if (coord == "break"):
-            break
-        else:
+        if flag["stop"]:
             if not flag["lock"]:
                 client.sendto(str.encode("rc {} {} {} {}".format(float(coord[0][0])*100,float(coord[0][1])*100,float(coord[1][1])*100,float(coord[1][0])*100)), target_address)
+        else:
+            break
+def update_acc():
+    accelerometer.enable()
+    gravity.enable()
+    while flag["stop"]: 
+        sleep(0.05)
+        if (flag["motion"] == True and platform == "android"):
+            a = accelerometer.acceleration
+            g = gravity.gravity
+            data = (a[0]-g[0],a[1]-g[1],a[2]-g[2])
+            result = acc.add(data)
+            if result != "0":
+                if result[0] == "-":
+                    print("-")
+                print(result[-1])
+            
 # App classes
 class Main(AnchorLayout):
     size_hint=1,1
@@ -144,49 +207,17 @@ class RoundedButton(Button):
 class dropdown(DropDown):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.followme=Button(text="Follow me",size_hint=(None, None), size=("120dp", "44dp"))
-        self.add_widget(self.followme)
-        self.stop = True
-        self.min = 3 #chose a random number
-        self.acc = []
-        self.acceleration = threading.Thread(target=self.enableacc)
-        func = lambda useless: self.acceleration.start()
-        self.followme.bind(on_press = func)
-        func2 = lambda useless: self.disableacc()
-        self.followme.bind(on_release = func2)
+        self.min = 7    #Activation speed 
         self.axes = ['x', 'y', 'z']
-
-    def enableacc(self, randomparam):
-        accelerometer.enable()
-        while self.stop: 
-            a = accelerometer.acceleration
-            if max(a) > self.min or abs(min(a)) > self.min:
-                self.acc.append(a)
-            time.sleep(0.5) #or some other time
-
-
-    def disableacc(self):
-        self.stop = False
-        accelerometer.disable()
-        self.direction()
-    
-    def direction(self): #finds out direction of acceleration.
-        maxacc = 0
-        maxidx = 0
-        minacc = 10000
-        minidx=0
-        #find max and min acc across all data points + find index
-        for i,x in enumerate(self.acc):
-            if (max(x)) > maxacc:
-                maxacc= max(x)
-                maxidx = i
-            if (min(x)) < minacc:
-                minacc=min(x)
-                minidx = i      
-        if maxidx < minidx or (maxidx == minidx and maxacc > abs(minacc)):
-            print(f"acceleration is {maxacc} along the {self.axes[self.acc[maxidx].index(maxacc)]} axis")
-        else: 
-            print(f"acceleration is {minacc} along the {self.axes[self.acc[minidx].index(minacc)]} axis")
+    def toggle_acc(self):
+        if flag["motion"]:
+            button = self.ids.motion_control
+            button.text = 'Motion Control'
+            flag["motion"] = False
+        else:
+            button = self.ids.motion_control
+            button.text = 'Stop'
+            flag["motion"] = True
 
     def sync(self):
         yaw = 0
@@ -261,7 +292,7 @@ class dropdown(DropDown):
         elif (include(result,["LAND","LEND","LEARN","LEAN","LET"])):
             app.root.append("land")
             self.send("land")
-        elif (include(result,["SLEEP","SHEEP","FLIP","FREE","ZIP"])):
+        elif (include(result,["SLEEP","SHEEP","FLIP","FREE","ZIP","SLIP","SIP"])):
             app.root.append("flip")
             self.send("flip b")
         else:
@@ -321,10 +352,12 @@ if __name__ == "__main__":
     stateThread.start()
     moveThread = threading.Thread(target=move)
     moveThread.start()
+    acceleration = threading.Thread(target=update_acc)
+    acceleration.start()
 
     # Running and closing server after closing app
     app.run()
+    flag["stop"] == False
     client.close() 
     server.close()
-    coord = "break"
     print("App closed successfully")
