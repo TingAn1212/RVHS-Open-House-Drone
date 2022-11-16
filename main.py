@@ -173,7 +173,7 @@ def update_acc():
             result = acc.add(data)
             if result != "0":
                 app.root.append(result)
-                flag["lock"] == True
+                flag["lock"] = True
                 acc.reset()
                 if result == "+y":
                     client.sendto(str.encode("rc -100 0 0 0"), target_address)
@@ -183,9 +183,9 @@ def update_acc():
                     client.sendto(str.encode("rc 0 0 100 0"), target_address)
                 elif result == "-z":
                     client.sendto(str.encode("rc 0 0 -100 0"), target_address)
-                sleep(2.5)
+                sleep(1)
                 client.sendto(str.encode("rc 0 0 0 0"), target_address)
-                flag["lock"] == False
+                flag["lock"] = False
             
 # App classes
 class Main(AnchorLayout):
@@ -312,7 +312,7 @@ class dropdown(DropDown):
         if (include(result,["TAKE OFF","TAKE","TAKE ALL","TAKEOFF"])):
             app.root.append("takeoff")
             self.send("takeoff")
-        elif (include(result,["LAND","LEND","LEARN","LEAN","LET"])):
+        elif (include(result,["LAND","LEND","LEARN","LEAN","LET","Send","Blend"])):
             app.root.append("land")
             self.send("land")
         elif (include(result,["SLEEP","SHEEP","FLIP","FREE","ZIP","SLIP","SIP"])):
@@ -322,14 +322,14 @@ class dropdown(DropDown):
             app.root.append("forward")
             flag["lock"] = True
             self.send("rc 0 100 0 0")
-            sleep(2.5)
+            sleep(1.5)
             self.send("rc 0 0 0 0")
             flag["lock"] = False
         elif (include(result,["back","bag","beck"])):
             app.root.append("backward")
             flag["lock"] = True
             self.send("rc 0 -100 0 0")
-            sleep(2.5)
+            sleep(1.5)
             self.send("rc 0 0 0 0")
             flag["lock"] = False
         else:
