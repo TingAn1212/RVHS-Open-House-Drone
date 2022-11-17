@@ -14,17 +14,22 @@ from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.dropdown import DropDown
 from garden.joystick.joystick import Joystick
 from kivy import platform
-# Import drone
+from kivy.clock import Clock
+
+# Import other library
 from plyer import stt, spatialorientation, accelerometer, gravity
 from math import pi
 import threading 
 import socket
 from time import sleep
-from kivy.clock import Clock
+from math import floor
+
+#Get permission
 if platform == "android":
     spatialorientation.enable_listener()
     from android.permissions import Permission, request_permissions
     request_permissions([Permission.INTERNET,Permission.ACCESS_NETWORK_STATE,Permission.RECORD_AUDIO])
+
 #Global Variables
 states = ""
 flag = {"stop":True,"lock":False,"motion":False}
@@ -37,15 +42,16 @@ client.bind(local_address1)
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(local_address2)
 stt.language = "en-US"
-class Acc:
-    def __init__(self,mini):
-        self.mini = mini
+class Acc: #Container object for acceleration data
+    def __init__(self,minimum,cache):
+        self.mini = minimum
+        self.cache = cache
         self.data = {"x":[],"y":[],"z":[]}
-        for i in range(20):
+        for i in range(self.cache):
             self.data["x"].append(0)
             self.data["y"].append(0)
             self.data["z"].append(0)
-    def add(self,new):
+    def add(self,new): #Cycle 1 step of data
         self.data["x"].append(new[0])
         self.data["x"].pop(0)
         self.data["y"].append(new[1])
@@ -67,7 +73,7 @@ class Acc:
         else:
             return False
     def mid(self):
-        tem = [abs(self.data["x"][9]),abs(self.data["y"][9]),abs(self.data["z"][9])]
+        tem = [abs(self.data["x"][floor(self.cache/2)]),abs(self.data["y"][floor(self.cache/2)]),abs(self.data["z"][floor(self.cache/2)])]
         if max(tem) >= self.mini:
             return True
         else:
@@ -86,14 +92,14 @@ class Acc:
         else:
             nega = "-"
         return nega+dir
-    def reset(self):
+    def reset(self): #Clear the cache
         self.data = {"x":[],"y":[],"z":[]}
-        for i in range(20):
+        for i in range(self.cache):
             self.data["x"].append(0)
             self.data["y"].append(0)
             self.data["z"].append(0)
+acc = Acc(8,20) #Create the container
 
-acc = Acc(8)
 #Info processing functions
 def total(inp):
     res = 0
@@ -111,7 +117,7 @@ def include(source,target):
         if inside(source,item):
             return True
     return False
-def read(target):
+def read(target): #Split the string state data into a dictionary
     target = target.split("'")[1]
     result = {"dict":True}
     tem = target.split(";")
@@ -120,7 +126,7 @@ def read(target):
             tempo = item.split(":")
             result[tempo[0]] = tempo[1]
     return result
-def degree(src):
+def degree(src): #Convert radian to degree
     res = []
     for item in src:
         tem = float(item)/pi*180
@@ -129,10 +135,10 @@ def degree(src):
             pass
         res.append(round(tem,2))
     return res
-def close(i1,i2,range):
+def close(i1,i2,range): #Test if 2 number is close to each other
     return abs(i1-i2) < range
 #Async UDP functions
-def state():
+def state(): #Constantly update the state variable
     global states
     while True:
         try:
@@ -142,7 +148,7 @@ def state():
             #print(e)
             print ('\nExit . . .\n')
             break
-def recv(tar):
+def recv(tar): #Constantly listen to message response
     count = 0
     while True: 
         try:
@@ -153,7 +159,7 @@ def recv(tar):
             #print(e)
             print ('\nExit . . .\n')
             break
-def move():
+def move(): #Constantly update the joystick to remote control
     while True:
         sleep(0.1)
         if flag["stop"]:
@@ -161,7 +167,7 @@ def move():
                 client.sendto(str.encode("rc {} {} {} {}".format(float(coord[0][0])*100,float(coord[0][1])*100,float(coord[1][1])*100,float(coord[1][0])*100)), target_address)
         else:
             break
-def update_acc():
+def update_acc(): #Constantly listen to acceleration
     accelerometer.enable()
     gravity.enable()
     while flag["stop"]: 
@@ -188,19 +194,16 @@ def update_acc():
                 flag["lock"] = False
             
 # App classes
-class Main(AnchorLayout):
+class Main(AnchorLayout): #Screen
     size_hint=1,1
-    def append(self,new):
+    def append(self,new): #Add new line into the console
         if new == "state":
             self.ids.console.tem_content.append(states + "\n") 
         else:
             self.ids.console.tem_content.append(new + "\n") 
         self.ids.console.update()
 
-class Stop(AnchorLayout):
-    pass
-
-class Console(Label):
+class Console(Label): #Background console
     tem_content = []
     content = StringProperty("")
     def __init__(self, **kwargs):
@@ -217,9 +220,11 @@ class Console(Label):
         if len(self.tem_content) > 7:
             inp.pop(0)
         return res
-
     def update(self):
         self.content = self.convert(self.tem_content)
+
+class Stop(AnchorLayout): #Init stop button
+    pass
 
 class RoundedButton(Button):
     down = (0.25, 0.5, 1, 1)
@@ -227,12 +232,14 @@ class RoundedButton(Button):
     def emergency(self):
         client.sendto(str.encode("emergency"), target_address)
 
-class dropdown(DropDown):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.min = 7    #Activation speed 
-        self.axes = ['x', 'y', 'z']
-    def toggle_acc(self):
+class dropdown(DropDown): #Holder for all dropdown functions
+    def send(self, cmd): #Shortcut to send a command
+        try:
+            client.sendto(str.encode(cmd), target_address)
+            return "Ok"
+        except Exception as e:
+            return e   
+    def toggle_acc(self): #Style change when listening acc
         if flag["motion"]:
             button = self.ids.motion_control
             button.text = 'Motion Control'
@@ -241,8 +248,7 @@ class dropdown(DropDown):
             button = self.ids.motion_control
             button.text = 'Stop'
             flag["motion"] = True
-
-    def sync(self):
+    def sync(self): #Sync the orientation
         yaw = 0
         try:
             yaw = int(read(states)["yaw"])
@@ -268,43 +274,26 @@ class dropdown(DropDown):
             flag["lock"] = False
             app.root.append(respond)
         app.root.append(str(ori))
-        
-    def send(self, cmd):
-        try:
-            client.sendto(str.encode(cmd), target_address)
-            return "Ok"
-        except Exception as e:
-            return e
-            
-    def listen(self):
+    def listen(self): #Start stt
         if stt.listening:
             self.stop_listening()
             return 
         start_button = self.ids.start_button
         start_button.text = 'Stop'
-
         stt.start()
-        #audio.start()
-
         Clock.schedule_interval(self.check_state, 1 / 5)
-
-    def stop_listening(self):
+    def stop_listening(self): #Stop stt
         start_button = self.ids.start_button
         start_button.text = 'Start Listening'
-
         stt.stop()
-        #audio.stop()
         self.update()
-
         Clock.unschedule(self.check_state)
-    
-    def check_state(self, dt):
+    def check_state(self, dt): #Function to auto stop stt (Removing it somehow break the code, so don't)
         print(stt.listening)
         if not stt.listening:
             print(stt.errors)
             self.stop_listening()
-
-    def update(self):
+    def update(self): #Process the stt result
         print(stt.results)
         print(stt.partial_results)
         #audio.play()
@@ -335,8 +324,7 @@ class dropdown(DropDown):
         else:
             app.root.append(str(result))
 
-
-class FunctionsDropdown(AnchorLayout):
+class FunctionsDropdown(AnchorLayout): #Control dropdown logic
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.dropdown = dropdown()
@@ -344,14 +332,14 @@ class FunctionsDropdown(AnchorLayout):
         self.add_widget(self.mainbutton)
         self.mainbutton.bind(on_release = self.dropdown.open)
 
-class Wasd(FloatLayout): 
+class Wasd(FloatLayout): #Left joystick
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.padding = 20
         js = Joystick(pad_size = 0.4, outer_size = 0.4, inner_size=0.4, size_hint=(0.4,0.4))
         self.add_widget(js)
         js.bind(pad = self.update_coordinates)
-    def update_coordinates(self, joystick, pad):
+    def update_coordinates(self, joystick, pad): #Triggered when the joystick moves
         x = str(pad[0])[0:5]
         y = str(pad[1])[0:5]
         radians = str(joystick.radians)[0:5]
@@ -359,14 +347,14 @@ class Wasd(FloatLayout):
         angle = str(joystick.angle)[0:5]
         coord[0] = [x,y]
 
-class Updown(FloatLayout):
+class Updown(FloatLayout): #Right joystick
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.padding = 20
         ud = Joystick(pad_size = 0.4, outer_size = 0.4, inner_size=0.4, size_hint=(0.4,0.4), pos_hint={"right":1})
         self.add_widget(ud)
         ud.bind(pad = self.update_coordinates)
-    def update_coordinates(self, joystick, pad):
+    def update_coordinates(self, joystick, pad): #Triggered when the joystick moves
         x = str(pad[0])[0:5]
         y = str(pad[1])[0:5]
         radians = str(joystick.radians)[0:5]
@@ -374,10 +362,10 @@ class Updown(FloatLayout):
         angle = str(joystick.angle)[0:5]
         coord[1] = [x,y]
 
-
-class MainApp(App):
+class MainApp(App): #Main app holding the screen App()
     pass
 
+#Init and ending code
 if __name__ == "__main__":
     #Init
     app = MainApp()
@@ -392,8 +380,10 @@ if __name__ == "__main__":
     acceleration = threading.Thread(target=update_acc)
     acceleration.start()
 
-    # Running and closing server after closing app
+    #Run app(Kivy main app loop)
     app.run()
+
+    #Ending code after app is closed
     flag["stop"] == False
     client.close() 
     server.close()
