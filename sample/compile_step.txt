@@ -5,7 +5,10 @@ cd "C:\platform-tools\"
 .\adb kill-server
 .\adb -a -P 5037 nodaemon server
 bash:
-export ADB_SERVER_SOCKET=tcp:(ip):5037 # export ADB_SERVER_SOCKET=tcp:192.168.1.15:5037
+export ADB_SERVER_SOCKET=tcp:(ip):5037 
+export ADB_SERVER_SOCKET=tcp:192.168.1.15:5037
+export ADB_SERVER_SOCKET=tcp:192.168.43.221:5037
+#export ADB_SERVER_SOCKET=tcp:172.27.224.1:5037
 adb devices
 buildozer -v android deploy run logcat | grep python
 

@@ -89,7 +89,7 @@ class Acc: #Container object for acceleration data
         nega = axis_data.index(max(axis_data)) < axis_data.index(min(axis_data))
         if nega:
             nega = "+"
-        else:
+        else: 
             nega = "-"
         return nega+dir
     def reset(self): #Clear the cache
@@ -98,7 +98,7 @@ class Acc: #Container object for acceleration data
             self.data["x"].append(0)
             self.data["y"].append(0)
             self.data["z"].append(0)
-acc = Acc(8,20) #Create the container
+acc = Acc(8,10) #Create the container
 
 #Info processing functions
 def total(inp):
@@ -176,6 +176,7 @@ def update_acc(): #Constantly listen to acceleration
             a = accelerometer.acceleration
             g = gravity.gravity
             data = (a[0]-g[0],a[1]-g[1],a[2]-g[2])
+            print(data)
             result = acc.add(data)
             if result != "0":
                 app.root.append(result)
@@ -189,7 +190,7 @@ def update_acc(): #Constantly listen to acceleration
                     client.sendto(str.encode("rc 0 0 100 0"), target_address)
                 elif result == "-z":
                     client.sendto(str.encode("rc 0 0 -100 0"), target_address)
-                sleep(1)
+                sleep(0.5)
                 client.sendto(str.encode("rc 0 0 0 0"), target_address)
                 flag["lock"] = False
             
@@ -262,12 +263,16 @@ class dropdown(DropDown): #Holder for all dropdown functions
             flag["lock"] = True
             ind = 0
             respond = "Error"
-            self.send("rc 0 0 0 100")
-            while (ind < 60):
-                sleep(0.1)
+            self.send("rc 0 0 0 80")
+            while (ind < 600):
+                sleep(0.01)
+                ori = degree(spatialorientation.orientation)
+                ori[0] += 90
+                if ori[0] > 180:
+                    ori[0] = (ori[0]-180) + -180
                 ind += 1
                 yaw = int(read(states)["yaw"])
-                if close(yaw,ori[0],10):
+                if close(yaw,ori[0],5):
                     respond = "ok"
                     self.send("rc 0 0 0 0")
                     break
