@@ -1,0 +1,2 @@
+This is an app coded in kivy that works as a remote control for Tello drones. This controller offers a lot of unique and creative ways to control a drone, such as voice control and motion control using the accelerometer.
+                
